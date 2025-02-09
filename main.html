@@ -10,14 +10,50 @@
         #message { width: 80%; padding: 5px; }
         #send { padding: 5px; }
     </style>
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js"></script>
-    <script src="main.js"></script> <!-- Подключаем внешний JavaScript файл -->
 </head>
 <body>
     <h1>Чат для друзей</h1>
     <div id="chat-box"></div>
     <input type="text" id="message" placeholder="Введите сообщение...">
     <button id="send">Отправить</button>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getDatabase, ref, push, set, onChildAdded } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCybLXpHSdFLPlPBxecMpmzStuSxOIDJ6Y",
+            authDomain: "sbor-7a773.firebaseapp.com",
+            databaseURL: "https://sbor-7a773-default-rtdb.firebaseio.com",
+            projectId: "sbor-7a773",
+            storageBucket: "sbor-7a773.appspot.com",  // Исправлен URL
+            messagingSenderId: "382666971780",
+            appId: "1:382666971780:web:459692ab479de35d0dc0d1",
+            measurementId: "G-N4E3ZT2ZRB"
+        };
+
+        // Инициализация Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+        const messagesRef = ref(db, "messages");
+
+        // Отправка сообщения
+        document.getElementById("send").addEventListener("click", () => {
+            let message = document.getElementById("message").value;
+            if (message) {
+                const newMessageRef = push(messagesRef);
+                set(newMessageRef, { text: message });
+                document.getElementById("message").value = "";
+            }
+        });
+
+        // Отображение сообщений в чате
+        onChildAdded(messagesRef, snapshot => {
+            let msg = snapshot.val().text;
+            let p = document.createElement("p");
+            p.textContent = msg;
+            document.getElementById("chat-box").appendChild(p);
+        });
+    </script>
 </body>
 </html>
