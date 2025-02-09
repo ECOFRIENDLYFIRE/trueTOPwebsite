@@ -59,7 +59,7 @@
 
         // Отправка сообщения по нажатию Enter
         document.getElementById("message").addEventListener("keydown", (event) => {
-            if (event.key === "Enter") {
+            if (event.keyCode == 13) {
                 sendMessage();
                 event.preventDefault(); // Чтобы не происходило обычное поведение клавиши Enter (перевод на новую строку)
             }
