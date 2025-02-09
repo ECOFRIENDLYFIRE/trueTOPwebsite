@@ -78,6 +78,7 @@
         onChildAdded(messagesRef, snapshot => {
             let msg = snapshot.val().text;
             let name = snapshot.val().name;
+            if (name == "undefined") name = "ноунейм";
             let p = document.createElement("p");
             p.textContent = `${name}: ${msg}`; // Отображаем имя и сообщение
             document.getElementById("chat-box").appendChild(p);
