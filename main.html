@@ -5,13 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>СБОРНАЯ ЧАЙХОНЫ</title>
     <style>
-        /* Используем ссылку на изображение как фон */
         body {
             font-family: Arial, sans-serif;
             text-align: center;
-            background-image: url('https://example.com/your-image.jpg'); /* Замените на ссылку на изображение */
-            background-size: cover; /* Чтобы изображение покрывало весь экран */
-            background-position: center; /* Центрируем изображение */
+            background-size: cover;
+            background-position: center;
+            transition: background-image 0.5s ease;
         }
 
         #chat-box { 
@@ -54,15 +53,35 @@
             border: none; 
             cursor: pointer; 
         }
+
+        #background-url { 
+            width: 60%; 
+            padding: 5px; 
+            margin-right: 5px; 
+        }
+
+        #set-background-button {
+            padding: 5px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
     </style>
 </head>
 <body>
     <h1>внезапный чат</h1>
     <div id="chat-box"></div>
+
     <div class="input-container">
         <input type="text" id="name" placeholder="Ваше имя...">
         <input type="text" id="message" placeholder="Введите сообщение...">
         <button id="send">Отправить</button>
+    </div>
+
+    <div class="input-container">
+        <input type="text" id="background-url" placeholder="Введите URL изображения для фона">
+        <button id="set-background-button">Установить фон</button>
     </div>
 
     <!-- Тег для воспроизведения музыки -->
@@ -71,7 +90,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getDatabase, ref, push, set, onChildAdded } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+        import { getDatabase, ref, push, set, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyCybLXpHSdFLPlPBxecMpmzStuSxOIDJ6Y",
@@ -87,15 +106,17 @@
         // Инициализация Firebase
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
-        const messagesRef = ref(db, "messages");
+        const backgroundRef = ref(db, "background"); // Ссылка на хранилище фона
 
-        // Функция прокрутки чата вниз
-        function scrollToBottom() {
-            const chatBox = document.getElementById("chat-box");
-            chatBox.scrollTop = chatBox.scrollHeight;
-        }
+        // Загружаем URL фона из базы данных при загрузке страницы
+        onValue(backgroundRef, (snapshot) => {
+            const backgroundUrl = snapshot.val();
+            if (backgroundUrl) {
+                document.body.style.backgroundImage = `url('${backgroundUrl}')`;
+            }
+        });
 
-        // Отправка сообщения
+        // Функция для отправки сообщения
         function sendMessage() {
             let name = document.getElementById("name").value.trim();
             if (!name) {
@@ -103,10 +124,10 @@
             }
             let message = document.getElementById("message").value.trim();
             if (message) {
+                const messagesRef = ref(db, "messages");
                 const newMessageRef = push(messagesRef);
                 set(newMessageRef, { name: name, text: message });
                 document.getElementById("message").value = "";
-                scrollToBottom(); // Прокручиваем чат вниз
             }
         }
 
@@ -121,19 +142,14 @@
             }
         });
 
-        // Отображение сообщений в чате
-        onChildAdded(messagesRef, snapshot => {
-            let msg = snapshot.val().text;
-            let name = snapshot.val().name;
-            if (!name) name = "ноунейм";
-            let p = document.createElement("p");
-            p.textContent = `${name}: ${msg}`; // Отображаем имя и сообщение
-            document.getElementById("chat-box").appendChild(p);
-            scrollToBottom(); // Прокручиваем чат вниз после добавления нового сообщения
+        // Устанавливаем фон через URL
+        document.getElementById("set-background-button").addEventListener("click", () => {
+            const backgroundUrl = document.getElementById("background-url").value.trim();
+            if (backgroundUrl) {
+                // Сохраняем URL фона в Firebase
+                set(backgroundRef, backgroundUrl);
+            }
         });
-
-        // Прокручиваем чат вниз при первоначальной загрузке
-        window.onload = scrollToBottom;
 
         // Включение/выключение музыки
         const audio = document.getElementById("audio");
