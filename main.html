@@ -11,7 +11,13 @@
         #name { width: 30%; padding: 5px; margin-right: 5px; }
         #message { width: 50%; padding: 5px; margin-right: 5px; }
         #send { padding: 5px; }
-        #file-input { margin-top: 10px; }
+
+        /* Стиль для канваса */
+        #drawingCanvas { 
+            border: 1px solid black;
+            margin: 20px auto;
+            display: block;
+        }
     </style>
 </head>
 <body>
@@ -22,13 +28,15 @@
         <input type="text" id="message" placeholder="Введите сообщение...">
         <button id="send">Отправить</button>
     </div>
-    <!-- Поле для загрузки изображения -->
-    <input type="file" id="file-input" accept="image/*">
-    
+
+    <!-- Канвас для рисования -->
+    <h2>Совместная доска для рисования</h2>
+    <canvas id="drawingCanvas" width="600" height="400"></canvas>
+    <button id="clearCanvas">Очистить доску</button>
+
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getDatabase, ref, push, set, onChildAdded } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
-        import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyCybLXpHSdFLPlPBxecMpmzStuSxOIDJ6Y",
@@ -45,7 +53,7 @@
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
         const messagesRef = ref(db, "messages");
-        const storage = getStorage(app);
+        const drawingRef = ref(db, "drawing");
 
         // Функция прокрутки чата вниз
         function scrollToBottom() {
@@ -60,29 +68,10 @@
                 name = "ноунейм"; // Если имя не введено, ставим "ноунейм"
             }
             let message = document.getElementById("message").value.trim();
-            const fileInput = document.getElementById("file-input");
-            const file = fileInput.files[0]; // Загружаем файл, если выбран
-
-            if (message || file) {
-                if (file) {
-                    // Загружаем файл в Firebase Storage
-                    const fileRef = storageRef(storage, 'chat_images/' + file.name);
-                    uploadBytes(fileRef, file).then((snapshot) => {
-                        // Получаем ссылку на загруженное изображение
-                        getDownloadURL(snapshot.ref).then((url) => {
-                            // Сохраняем сообщение с ссылкой на изображение
-                            const newMessageRef = push(messagesRef);
-                            set(newMessageRef, { name: name, text: message, imageUrl: url });
-                        });
-                    });
-                } else {
-                    // Если файла нет, отправляем только текст
-                    const newMessageRef = push(messagesRef);
-                    set(newMessageRef, { name: name, text: message });
-                }
-
+            if (message) {
+                const newMessageRef = push(messagesRef);
+                set(newMessageRef, { name: name, text: message });
                 document.getElementById("message").value = "";
-                fileInput.value = ""; // Сбрасываем поле загрузки
                 scrollToBottom(); // Прокручиваем чат вниз
             }
         }
@@ -102,26 +91,68 @@
         onChildAdded(messagesRef, snapshot => {
             let msg = snapshot.val().text;
             let name = snapshot.val().name;
-            let imageUrl = snapshot.val().imageUrl;
             if (!name) name = "ноунейм";
             let p = document.createElement("p");
             p.textContent = `${name}: ${msg}`; // Отображаем имя и сообщение
-
-            // Если есть изображение, показываем его
-            if (imageUrl) {
-                let img = document.createElement("img");
-                img.src = imageUrl;
-                img.style.maxWidth = '100px'; // Ограничиваем размер изображения
-                img.style.maxHeight = '100px';
-                p.appendChild(img);
-            }
-
             document.getElementById("chat-box").appendChild(p);
             scrollToBottom(); // Прокручиваем чат вниз после добавления нового сообщения
         });
 
         // Прокручиваем чат вниз при первоначальной загрузке
         window.onload = scrollToBottom;
+
+        // Настройки канваса
+        const canvas = document.getElementById("drawingCanvas");
+        const ctx = canvas.getContext("2d");
+        let drawing = false;
+
+        // Начать рисовать
+        function startDrawing(event) {
+            drawing = true;
+            draw(event);
+        }
+
+        // Остановить рисование
+        function stopDrawing() {
+            drawing = false;
+            ctx.beginPath();
+        }
+
+        // Рисование
+        function draw(event) {
+            if (!drawing) return;
+            const x = event.clientX - canvas.offsetLeft;
+            const y = event.clientY - canvas.offsetTop;
+
+            ctx.lineTo(x, y);
+            ctx.stroke();
+
+            // Отправляем координаты в Firebase
+            set(ref(db, "drawing/line"), {
+                x: x,
+                y: y
+            });
+        }
+
+        // Слушаем изменения в Firebase и рисуем
+        onChildAdded(drawingRef, (snapshot) => {
+            const data = snapshot.val();
+            if (data) {
+                ctx.lineTo(data.x, data.y);
+                ctx.stroke();
+            }
+        });
+
+        // Подключение событий
+        canvas.addEventListener("mousedown", startDrawing);
+        canvas.addEventListener("mouseup", stopDrawing);
+        canvas.addEventListener("mousemove", draw);
+
+        // Очистить доску
+        document.getElementById("clearCanvas").addEventListener("click", () => {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            set(drawingRef, null); // Очищаем данные в Firebase
+        });
     </script>
 </body>
 </html>
