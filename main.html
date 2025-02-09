@@ -5,13 +5,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>СБОРНАЯ ЧАЙХОНЫ</title>
     <style>
-        body { font-family: Arial, sans-serif; text-align: center; }
+        body { font-family: Arial, sans-serif; text-align: center; transition: background-image 1s ease-in-out; }
         #chat-box { width: 300px; height: 400px; border: 1px solid #ccc; overflow-y: scroll; margin: 10px auto; padding: 10px; }
         .input-container { display: flex; justify-content: center; align-items: center; margin-top: 10px; }
         #name { width: 30%; padding: 5px; margin-right: 5px; }
         #message { width: 50%; padding: 5px; margin-right: 5px; }
         #send { padding: 5px; }
         #music-button { padding: 10px; background-color: #4CAF50; color: white; border: none; cursor: pointer; }
+        #background-url { padding: 5px; margin-top: 10px; width: 250px; }
+        #set-background-button { padding: 10px; background-color: #007BFF; color: white; border: none; cursor: pointer; margin-top: 10px; }
     </style>
 </head>
 <body>
@@ -27,9 +29,13 @@
     <audio id="audio" src="elevator-music.mp3" preload="auto"></audio>
     <button id="music-button">Включить музыку</button>
 
+    <!-- Поле для ввода URL изображения для фона -->
+    <input type="text" id="background-url" placeholder="Введите URL фото для фона">
+    <button id="set-background-button">Установить фон</button>
+
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getDatabase, ref, push, set, onChildAdded } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+        import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyCybLXpHSdFLPlPBxecMpmzStuSxOIDJ6Y",
@@ -45,7 +51,7 @@
         // Инициализация Firebase
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
-        const messagesRef = ref(db, "messages");
+        const backgroundRef = ref(db, "background"); // Ссылка на место в базе данных для фона
 
         // Функция прокрутки чата вниз
         function scrollToBottom() {
@@ -61,7 +67,7 @@
             }
             let message = document.getElementById("message").value.trim();
             if (message) {
-                const newMessageRef = push(messagesRef);
+                const newMessageRef = push(ref(db, "messages"));
                 set(newMessageRef, { name: name, text: message });
                 document.getElementById("message").value = "";
                 scrollToBottom(); // Прокручиваем чат вниз
@@ -80,7 +86,7 @@
         });
 
         // Отображение сообщений в чате
-        onChildAdded(messagesRef, snapshot => {
+        onChildAdded(ref(db, "messages"), snapshot => {
             let msg = snapshot.val().text;
             let name = snapshot.val().name;
             if (!name) name = "ноунейм";
@@ -104,6 +110,27 @@
             } else {
                 audio.pause();
                 musicButton.textContent = "Включить музыку";
+            }
+        });
+
+        // Устанавливаем фон
+        const setBackgroundButton = document.getElementById("set-background-button");
+        const backgroundUrlInput = document.getElementById("background-url");
+
+        setBackgroundButton.addEventListener("click", () => {
+            const url = backgroundUrlInput.value.trim();
+            if (url) {
+                set(backgroundRef, url); // Сохраняем URL в базе данных
+            }
+        });
+
+        // Подписываемся на изменения фона, чтобы обновить фон у всех пользователей
+        onValue(backgroundRef, snapshot => {
+            const backgroundUrl = snapshot.val();
+            if (backgroundUrl) {
+                document.body.style.backgroundImage = `url(${backgroundUrl})`;
+                document.body.style.backgroundSize = "cover";
+                document.body.style.backgroundPosition = "center";
             }
         });
     </script>
