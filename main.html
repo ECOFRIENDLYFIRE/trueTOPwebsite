@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Чат для друзей</title>
+    <title>СБОРНАЯ ЧАЙХОНЫ</title>
     <style>
         body { font-family: Arial, sans-serif; text-align: center; }
         #chat-box { width: 300px; height: 400px; border: 1px solid #ccc; overflow-y: scroll; margin: 10px auto; padding: 10px; }
@@ -14,7 +14,7 @@
     </style>
 </head>
 <body>
-    <h1>Чат для друзей</h1>
+    <h1>внезапный чат</h1>
     <div id="chat-box"></div>
     <div class="input-container">
         <input type="text" id="name" placeholder="Ваше имя...">
@@ -50,8 +50,11 @@
 
         // Отправка сообщения
         function sendMessage() {
-            let name = document.getElementById("name").value || "Аноним"; // Если имя не введено, будет "Аноним"
-            let message = document.getElementById("message").value;
+            let name = document.getElementById("name").value.trim();
+            if (!name) {
+                name = "ноунейм"; // Если имя не введено, ставим "ноунейм"
+            }
+            let message = document.getElementById("message").value.trim();
             if (message) {
                 const newMessageRef = push(messagesRef);
                 set(newMessageRef, { name: name, text: message });
