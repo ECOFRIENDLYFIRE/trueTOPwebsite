@@ -11,13 +11,6 @@
         #name { width: 30%; padding: 5px; margin-right: 5px; }
         #message { width: 50%; padding: 5px; margin-right: 5px; }
         #send { padding: 5px; }
-
-        /* Стиль для канваса */
-        #drawingCanvas { 
-            border: 1px solid black;
-            margin: 20px auto;
-            display: block;
-        }
     </style>
 </head>
 <body>
@@ -28,11 +21,6 @@
         <input type="text" id="message" placeholder="Введите сообщение...">
         <button id="send">Отправить</button>
     </div>
-
-    <!-- Канвас для рисования -->
-    <h2>Совместная доска для рисования</h2>
-    <canvas id="drawingCanvas" width="600" height="400"></canvas>
-    <button id="clearCanvas">Очистить доску</button>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
@@ -53,7 +41,6 @@
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
         const messagesRef = ref(db, "messages");
-        const drawingRef = ref(db, "drawing");
 
         // Функция прокрутки чата вниз
         function scrollToBottom() {
@@ -100,59 +87,6 @@
 
         // Прокручиваем чат вниз при первоначальной загрузке
         window.onload = scrollToBottom;
-
-        // Настройки канваса
-        const canvas = document.getElementById("drawingCanvas");
-        const ctx = canvas.getContext("2d");
-        let drawing = false;
-
-        // Начать рисовать
-        function startDrawing(event) {
-            drawing = true;
-            draw(event);
-        }
-
-        // Остановить рисование
-        function stopDrawing() {
-            drawing = false;
-            ctx.beginPath();
-        }
-
-        // Рисование
-        function draw(event) {
-            if (!drawing) return;
-            const x = event.clientX - canvas.offsetLeft;
-            const y = event.clientY - canvas.offsetTop;
-
-            ctx.lineTo(x, y);
-            ctx.stroke();
-
-            // Отправляем координаты в Firebase
-            set(ref(db, "drawing/line"), {
-                x: x,
-                y: y
-            });
-        }
-
-        // Слушаем изменения в Firebase и рисуем
-        onChildAdded(drawingRef, (snapshot) => {
-            const data = snapshot.val();
-            if (data) {
-                ctx.lineTo(data.x, data.y);
-                ctx.stroke();
-            }
-        });
-
-        // Подключение событий
-        canvas.addEventListener("mousedown", startDrawing);
-        canvas.addEventListener("mouseup", stopDrawing);
-        canvas.addEventListener("mousemove", draw);
-
-        // Очистить доску
-        document.getElementById("clearCanvas").addEventListener("click", () => {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            set(drawingRef, null); // Очищаем данные в Firebase
-        });
     </script>
 </body>
 </html>
