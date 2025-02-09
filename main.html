@@ -7,15 +7,20 @@
     <style>
         body { font-family: Arial, sans-serif; text-align: center; }
         #chat-box { width: 300px; height: 400px; border: 1px solid #ccc; overflow-y: scroll; margin: 10px auto; padding: 10px; }
-        #message { width: 80%; padding: 5px; }
+        .input-container { display: flex; justify-content: center; align-items: center; margin-top: 10px; }
+        #name { width: 30%; padding: 5px; margin-right: 5px; }
+        #message { width: 50%; padding: 5px; margin-right: 5px; }
         #send { padding: 5px; }
     </style>
 </head>
 <body>
     <h1>Чат для друзей</h1>
     <div id="chat-box"></div>
-    <input type="text" id="message" placeholder="Введите сообщение...">
-    <button id="send">Отправить</button>
+    <div class="input-container">
+        <input type="text" id="name" placeholder="Ваше имя...">
+        <input type="text" id="message" placeholder="Введите сообщение...">
+        <button id="send">Отправить</button>
+    </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
@@ -45,10 +50,11 @@
 
         // Отправка сообщения
         function sendMessage() {
+            let name = document.getElementById("name").value || "Аноним"; // Если имя не введено, будет "Аноним"
             let message = document.getElementById("message").value;
             if (message) {
                 const newMessageRef = push(messagesRef);
-                set(newMessageRef, { text: message });
+                set(newMessageRef, { name: name, text: message });
                 document.getElementById("message").value = "";
                 scrollToBottom(); // Прокручиваем чат вниз
             }
@@ -68,8 +74,9 @@
         // Отображение сообщений в чате
         onChildAdded(messagesRef, snapshot => {
             let msg = snapshot.val().text;
+            let name = snapshot.val().name;
             let p = document.createElement("p");
-            p.textContent = msg;
+            p.textContent = `${name}: ${msg}`; // Отображаем имя и сообщение
             document.getElementById("chat-box").appendChild(p);
             scrollToBottom(); // Прокручиваем чат вниз после добавления нового сообщения
         });
