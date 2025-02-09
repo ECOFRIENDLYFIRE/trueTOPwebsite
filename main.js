@@ -8,14 +8,13 @@ const firebaseConfig = {
   projectId: "sbor-7a773",
   storageBucket: "sbor-7a773.firebasestorage.app",
   messagingSenderId: "382666971780",
-  appId: "1:382666971780:web:e82286a6212319c60dc0d1",
-  measurementId: "G-B7K9KSSS4P"
+  appId: "1:382666971780:web:459692ab479de35d0dc0d1",
+  measurementId: "G-N4E3ZT2ZRB"
 };
 
-
 const app = initializeApp(firebaseConfig);
-
 const analytics = getAnalytics(app);
+
 
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database().ref("messages");
