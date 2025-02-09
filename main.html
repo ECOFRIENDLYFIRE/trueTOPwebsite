@@ -5,13 +5,48 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>СБОРНАЯ ЧАЙХОНЫ</title>
     <style>
-        body { font-family: Arial, sans-serif; text-align: center; }
-        #chat-box { width: 300px; height: 400px; border: 1px solid #ccc; overflow-y: scroll; margin: 10px auto; padding: 10px; }
-        .input-container { display: flex; justify-content: center; align-items: center; margin-top: 10px; }
-        #name { width: 30%; padding: 5px; margin-right: 5px; }
-        #message { width: 50%; padding: 5px; margin-right: 5px; }
-        #send { padding: 5px; }
-        #music-button { padding: 10px; background-color: #4CAF50; color: white; border: none; cursor: pointer; }
+        body { 
+            font-family: Arial, sans-serif; 
+            text-align: center; 
+            transition: background-image 1s ease; /* Плавный переход */
+        }
+        #chat-box { 
+            width: 300px; 
+            height: 400px; 
+            border: 1px solid #ccc; 
+            overflow-y: scroll; 
+            margin: 10px auto; 
+            padding: 10px; 
+        }
+        .input-container { 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            margin-top: 10px; 
+        }
+        #name { 
+            width: 30%; 
+            padding: 5px; 
+            margin-right: 5px; 
+        }
+        #message { 
+            width: 50%; 
+            padding: 5px; 
+            margin-right: 5px; 
+        }
+        #send { 
+            padding: 5px; 
+        }
+        #music-button { 
+            padding: 10px; 
+            background-color: #4CAF50; 
+            color: white; 
+            border: none; 
+            cursor: pointer; 
+        }
+        #upload-button { 
+            margin-top: 20px;
+        }
     </style>
 </head>
 <body>
@@ -23,6 +58,9 @@
         <button id="send">Отправить</button>
     </div>
 
+    <button id="upload-button">Выбрать фото для фона</button>
+    <input type="file" id="background-upload" style="display:none;" accept="image/*">
+
     <!-- Тег для воспроизведения музыки -->
     <audio id="audio" src="elevator-music.mp3" preload="auto"></audio>
     <button id="music-button">Включить музыку</button>
@@ -30,6 +68,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getDatabase, ref, push, set, onChildAdded } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+        import { getStorage, ref as storageRef, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyCybLXpHSdFLPlPBxecMpmzStuSxOIDJ6Y",
@@ -45,7 +84,10 @@
         // Инициализация Firebase
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
+        const storage = getStorage(app);
+
         const messagesRef = ref(db, "messages");
+        const backgroundRef = ref(db, "background");
 
         // Функция прокрутки чата вниз
         function scrollToBottom() {
@@ -104,6 +146,35 @@
             } else {
                 audio.pause();
                 musicButton.textContent = "Включить музыку";
+            }
+        });
+
+        // Обработчик для загрузки фото на фон
+        document.getElementById("upload-button").addEventListener("click", () => {
+            document.getElementById("background-upload").click();
+        });
+
+        document.getElementById("background-upload").addEventListener("change", (event) => {
+            const file = event.target.files[0];
+            if (file) {
+                const storagePath = storageRef(storage, `backgrounds/${file.name}`);
+                uploadBytes(storagePath, file).then(() => {
+                    getDownloadURL(storagePath).then((url) => {
+                        // Сохраняем URL изображения в Firebase
+                        set(backgroundRef, { url: url }).then(() => {
+                            // Применяем изображение на фон для всех пользователей
+                            document.body.style.backgroundImage = `url(${url})`;
+                        });
+                    });
+                });
+            }
+        });
+
+        // Получаем текущий фон из Firebase при загрузке страницы
+        onChildAdded(backgroundRef, snapshot => {
+            const data = snapshot.val();
+            if (data && data.url) {
+                document.body.style.backgroundImage = `url(${data.url})`;
             }
         });
     </script>
