@@ -11,6 +11,12 @@
         #name { width: 30%; padding: 5px; margin-right: 5px; }
         #message { width: 50%; padding: 5px; margin-right: 5px; }
         #send { padding: 5px; }
+        .flash-animation { animation: flash 0.5s ease-in-out infinite; }
+        @keyframes flash {
+            0% { opacity: 1; }
+            50% { opacity: 0; }
+            100% { opacity: 1; }
+        }
     </style>
 </head>
 <body>
@@ -21,6 +27,8 @@
         <input type="text" id="message" placeholder="Введите сообщение...">
         <button id="send">Отправить</button>
     </div>
+    <button id="flash-btn">Вспышка!</button>
+    <p id="flash-text"></p>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
@@ -37,18 +45,15 @@
             measurementId: "G-N4E3ZT2ZRB"
         };
 
-        // Инициализация Firebase
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
         const messagesRef = ref(db, "messages");
 
-        // Функция прокрутки чата вниз
         function scrollToBottom() {
             const chatBox = document.getElementById("chat-box");
             chatBox.scrollTop = chatBox.scrollHeight;
         }
 
-        // Отправка сообщения
         function sendMessage() {
             let name = document.getElementById("name").value.trim();
             if (!name) {
@@ -63,10 +68,8 @@
             }
         }
 
-        // Отправка сообщения по нажатию кнопки
         document.getElementById("send").addEventListener("click", sendMessage);
 
-        // Отправка сообщения по нажатию Enter
         document.getElementById("message").addEventListener("keydown", (event) => {
             if (event.keyCode == 13) {
                 sendMessage();
@@ -74,19 +77,26 @@
             }
         });
 
-        // Отображение сообщений в чате
         onChildAdded(messagesRef, snapshot => {
             let msg = snapshot.val().text;
             let name = snapshot.val().name;
             if (!name) name = "ноунейм";
             let p = document.createElement("p");
-            p.textContent = `${name}: ${msg}`; // Отображаем имя и сообщение
+            p.textContent = `${name}: ${msg}`;
             document.getElementById("chat-box").appendChild(p);
             scrollToBottom(); // Прокручиваем чат вниз после добавления нового сообщения
         });
 
-        // Прокручиваем чат вниз при первоначальной загрузке
         window.onload = scrollToBottom;
+
+        const flashTextButton = document.getElementById('flash-btn');
+        const flashTextElement = document.getElementById('flash-text');
+
+        flashTextButton.addEventListener('click', () => {
+            flashTextElement.textContent = "ВАЖНО: Вспышка!";
+            flashTextElement.classList.add('flash-animation');
+            setTimeout(() => flashTextElement.classList.remove('flash-animation'), 1500);
+        });
     </script>
 </body>
 </html>
